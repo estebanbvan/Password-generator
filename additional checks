@@ -1,8 +1,5 @@
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class PasswordGenerator {
 
@@ -13,16 +10,12 @@ public class PasswordGenerator {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        
+        // Ввод длины пароля с проверкой
+        int length = getValidIntegerInput(scanner, "Enter password length (min 8): ", 8);
 
-        // Ввод длины пароля с минимальной длиной 8 символов
-        int length = 0;
-        while (length < 8) {
-            System.out.print("Enter password length (min 8): ");
-            length = scanner.nextInt();
-            if (length < 8) {
-                System.out.println("Password length must be at least 8 characters.");
-            }
-        }
+        // Выбор количества паролей
+        int numPasswords = getValidIntegerInput(scanner, "How many passwords to generate? (min 1): ", 1);
 
         // Настройка параметров генерации пароля
         boolean includeLower = getYesOrNoInput(scanner, "Include lowercase letters? (y/n): ");
@@ -30,59 +23,69 @@ public class PasswordGenerator {
         boolean includeDigits = getYesOrNoInput(scanner, "Include digits? (y/n): ");
         boolean includeSpecial = getYesOrNoInput(scanner, "Include special characters? (y/n): ");
 
-        // Проверка, чтобы хотя бы одна категория символов была выбрана
+        // Проверка, что хотя бы одна категория символов выбрана
         if (!(includeLower || includeUpper || includeDigits || includeSpecial)) {
             System.out.println("Error: You must include at least one category of characters.");
             return;
         }
 
-        // Генерация пароля
-        String password = generatePassword(length, includeLower, includeUpper, includeDigits, includeSpecial);
-        System.out.println("Generated password: " + password);
+        // Генерация паролей
+        System.out.println("\nGenerated Passwords:");
+        for (int i = 1; i <= numPasswords; i++) {
+            String password = generatePassword(length, includeLower, includeUpper, includeDigits, includeSpecial);
+            System.out.println(i + ": " + password);
+        }
     }
 
-    // Метод для получения ответа (y/n)
+    // Получение ответа (y/n)
     private static boolean getYesOrNoInput(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(prompt);
-            String input = scanner.next();
-            if (input.equalsIgnoreCase("y")) {
-                return true;
-            } else if (input.equalsIgnoreCase("n")) {
-                return false;
+            String input = scanner.next().trim().toLowerCase();
+            if (input.equals("y")) return true;
+            if (input.equals("n")) return false;
+            System.out.println("Invalid input. Please enter 'y' or 'n'.");
+        }
+    }
+
+    // Получение корректного целого числа с минимальным значением
+    private static int getValidIntegerInput(Scanner scanner, String prompt, int minValue) {
+        int value;
+        while (true) {
+            System.out.print(prompt);
+            if (scanner.hasNextInt()) {
+                value = scanner.nextInt();
+                if (value >= minValue) return value;
             } else {
-                System.out.println("Invalid input. Please enter 'y' or 'n'.");
+                scanner.next(); // Очищаем неверный ввод
             }
+            System.out.println("Invalid input. Please enter a number >= " + minValue);
         }
     }
 
     public static String generatePassword(int length, boolean includeLower, boolean includeUpper, boolean includeDigits, boolean includeSpecial) {
         StringBuilder characterSet = new StringBuilder();
         List<Character> password = new ArrayList<>();
-
-        // Добавляем соответствующие символы в characterSet
-        if (includeLower) {
-            characterSet.append(LOWERCASE);
-        }
-        if (includeUpper) {
-            characterSet.append(UPPERCASE);
-        }
-        if (includeDigits) {
-            characterSet.append(DIGITS);
-        }
-        if (includeSpecial) {
-            characterSet.append(SPECIAL_CHARACTERS);
-        }
-
         SecureRandom random = new SecureRandom();
 
-        // Генерация пароля
-        for (int i = 0; i < length; i++) {
-            char randomChar = characterSet.charAt(random.nextInt(characterSet.length()));
-            password.add(randomChar);
+        // Добавляем гарантированные символы для каждой выбранной категории
+        if (includeLower) password.add(LOWERCASE.charAt(random.nextInt(LOWERCASE.length())));
+        if (includeUpper) password.add(UPPERCASE.charAt(random.nextInt(UPPERCASE.length())));
+        if (includeDigits) password.add(DIGITS.charAt(random.nextInt(DIGITS.length())));
+        if (includeSpecial) password.add(SPECIAL_CHARACTERS.charAt(random.nextInt(SPECIAL_CHARACTERS.length())));
+
+        // Добавляем все возможные символы в characterSet
+        if (includeLower) characterSet.append(LOWERCASE);
+        if (includeUpper) characterSet.append(UPPERCASE);
+        if (includeDigits) characterSet.append(DIGITS);
+        if (includeSpecial) characterSet.append(SPECIAL_CHARACTERS);
+
+        // Добавляем оставшиеся случайные символы
+        for (int i = password.size(); i < length; i++) {
+            password.add(characterSet.charAt(random.nextInt(characterSet.length())));
         }
 
-        // Перемешиваем символы, чтобы пароль был случайным
+        // Перемешиваем символы
         Collections.shuffle(password, random);
 
         // Собираем пароль в строку
